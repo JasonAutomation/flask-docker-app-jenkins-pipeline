@@ -1,8 +1,7 @@
 pipeline {
     agent any
-    environment {        
-	DOCKER_HUB_REPO = "flask-docker-app-jenkins-pipeline"
-	REGISTRY_CREDENTIAL = "dockerhub"
+    environment {
+        DOCKER_HUB_REPO = "jasonautomation/flask"
         CONTAINER_NAME = "flask-container"
         STUB_VALUE = "200"
     }
@@ -17,20 +16,19 @@ pipeline {
         }
         stage('Build') {
             steps {
-		    script {
-			//  Building new image
-			sh 'docker image build -t $DOCKER_HUB_REPO:latest .'
-			sh 'docker image tag $DOCKER_HUB_REPO:latest $DOCKER_HUB_REPO:$BUILD_NUMBER'
+                //  Building new image
+                sh 'docker image build -t $DOCKER_HUB_REPO:latest .'
+                sh 'docker image tag $DOCKER_HUB_REPO:latest $DOCKER_HUB_REPO:$BUILD_NUMBER'
 
-			//  Pushing Image to Repository
-			docker.withRegistry( '', REGISTRY_CREDENTIAL ) {
-			sh 'docker push flask-docker-app-jenkins-pipeline:$BUILD_NUMBER'
-			sh 'docker push flask-docker-app-jenkins-pipeline:latest'
-				}
+                //  Pushing Image to Repository
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER1', passwordVariable: 'PASS1')]) {
+                    sh 'docker login -u "$USER1" -p "$PASS1"'
+                }
+                sh 'docker push $DOCKER_HUB_REPO:$BUILD_NUMBER'
+                sh 'docker push $DOCKER_HUB_REPO:latest'
                 
-                	echo "Image built and pushed to repository"
-		    }
-		    }
+                echo "Image built and pushed to repository"
+            }
         }
         stage('Deploy') {
             steps {
